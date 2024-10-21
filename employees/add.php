@@ -8,56 +8,61 @@ $errors = [];
 $departmentsQuery="SELECT * FROM `departments`";
 $department = mysqli_query($con, $departmentsQuery);
 
-if(isset($_POST['submit']))
-{
-// print_r($_POST);
-// print_r($_FILES);
-    $name =filterString($_POST['name']);
+if(isset($_POST['submit'])) {
+    // Input sanitization
+    $name = filterString($_POST['name']);
     $email = filterString($_POST['email']);
-    $password = $_POST['password'];
+    $password = sha1($_POST['password']) ;
     $department_id = $_POST['department_id'];
-    $address=filterString( $_POST['address']);
+    $address = filterString($_POST['address']);
     $phone = filterString($_POST['phone']);
-    // errors
-    if(stringvalidation($name, 4))
-    {
+    
+    // Error handling
+    $errors = [];
+    
+    if(stringvalidation($name, 4)) {
         $errors[] = "Name must be at least 4 characters long";
     }
-    if(stringvalidation($email, 0))
-    {
+    if(stringvalidation($email, 0)) {
         $errors[] = "Email must be entered!!";
     }
-    if(stringvalidation($address, 0))
-    {
+    if(stringvalidation($address, 0)) {
         $errors[] = "Address must be entered!!";
     }
-    if(stringvalidation($phone ,11))
-    {
+    if(stringvalidation($phone ,11)) {
         $errors[] = "Phone must be more than 10!!";
     }
-            //image uploade 
-            $realName = $_FILES['image']['name'];
-            $imgsize = $_FILES['image']['size'];
-            $imgName= "company_" .rand(0,10000) ."_".time(). $realName;
-            $tmpname = $_FILES['image']['tmp_name'];
-            $location = 'uploads/' . $imgName;
-            if(imagevalidation($realName,$imgsize,5))
-            {
-                $errors[] = "Image is required & size must be less than 5MB!!";
-            }
-
     
-     if(empty($errors)){
-    
+    // Image upload validation
+    $realName = $_FILES['image']['name'];
+    $imgsize = $_FILES['image']['size'];
+    $imgName = "company_" . rand(0,10000). "_" . time() . "_" . $realName;
+    $tmpname = $_FILES['image']['tmp_name'];
+    $location = 'uploads/' . $imgName;
 
-    move_uploaded_file( $tmpname,$location);
+    if(imagevalidation($realName, $imgsize, 5)) {
+        $errors[] = "Image is required & size must be less than 5MB!!";
     }
-    
-    $insertQuery = "INSERT INTO `employees` values (NULL,' $name','$email','$password ',$department_id,' $address','$phone','$imgName')";
-    $insert=mysqli_query($con,$insertQuery);
-    if($insert){
-     $message = "Employee Added Successfully";
-}}
+
+    // Proceed only if there are no errors
+    if(empty($errors)) {
+        // Move the uploaded file to the specified location
+        if(move_uploaded_file($tmpname, $location)) {
+            // Insert the employee data into the database only if the image is successfully uploaded
+            $insertQuery = "INSERT INTO `employees` VALUES (NULL, '$name', '$email', '$password', $department_id, '$address', '$phone', '$imgName')";
+            $insert = mysqli_query($con, $insertQuery);
+            
+            if($insert) {
+                $message = "Employee Added Successfully";
+            } else {
+                $message = "Error inserting employee into the database";
+            }
+        } else {
+            $errors[] = "Failed to upload the image. Employee not added.";
+        }
+    }
+}
+
 
 ?>
 

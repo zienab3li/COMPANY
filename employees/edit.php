@@ -31,6 +31,7 @@ if(isset($_GET['edit']))
     $department_id=$row['department_id'];
     $address=$row['address'];
     $phone=$row['phone'];
+    
 if(isset($_POST['update']))
 {
     $name = filterString($_POST['name']);
@@ -65,14 +66,14 @@ if(isset($_POST['update']))
         $tmpname = $_FILES['image']['tmp_name'];
         $oldimage = 'uploads/' . $row['image'];
         $location = 'uploads/' . $imgName;
-        if($oldimage != 'fake.jpeg')
+        if($row['image'] != 'fake.jpeg')
         {
             unlink($oldimage);
         }
         move_uploaded_file( $tmpname,$location);
         }
         else{
-            $imgName='fake.jpeg';
+            $imgName=$row['image'];
         }
     $updateQuery = "UPDATE `employees` SET `name`='$name', `email`='$email', `password`='$password', `department_id`=$department_id, `address`='$address', `phone`='$phone', `image`= '$imgName' WHERE `id`=$id";
     $update = mysqli_query($con, $updateQuery);

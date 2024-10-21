@@ -9,6 +9,7 @@ require_once '../shared/navbar.php';
 
 
 $message='';
+$errors = [];
 
 $categoryQuery="SELECT * FROM `categories`";
 $category = mysqli_query($con, $categoryQuery);
@@ -16,18 +17,38 @@ $category = mysqli_query($con, $categoryQuery);
 if(isset($_POST['submit']))
 {
     
-    $title= $_POST['title'];
-    $description = $_POST['description'];
+    $title=filterString( $_POST['title']);
+    $description =filterString( $_POST['description']);
     $category_id = $_POST['category_id'];
     $price = $_POST['price'];
 
-    $insertQuery = "INSERT INTO `products` VALUES (NULL, '$title','$description',$price,$category_id)";
-    $insert = mysqli_query($con, $insertQuery);
-if($insert)
-{
+    if(stringvalidation($title,5))
+    {
+        $errors[]='Title must be at least 5 characters long';
+    }
+    if(stringvalidation($description,10))
+    {
+        $errors[]='Description must be at least 10 characters long';
+    }
+    //image upload
+    $realname = $_FILES['image']['name'];
+    $imagesize = $_FILES['image']['size'];
+    $imgname = 'company_'.time().rand(0,20000).'_'.$realname;
+    $tmpname = $_FILES['image']['tmp_name'];
+    $location= 'uploads/'.$imgname;
+     if(imagevalidation($realname,$imagesize,5))
+     {
+        $errors[]='Image is required & must be at least 5M in size';
+     }
+    if(empty($errors)){
+        if(move_uploaded_file($tmpname,$location)){
+      $insertQuery = "INSERT INTO `products` VALUES (NULL, '$title','$description',$price,$category_id,'$imgname')";
+      $insert = mysqli_query($con, $insertQuery);
+   if($insert)
+   {
     $message = "Product Added Successfully";
-}
-}
+   }
+ }}}
 
 
 
@@ -47,8 +68,17 @@ if($insert)
             <p class="fs-4 mb-0"><?= $message?></p>
         </div>
         <?php endif; ?>
+        <?php if(!empty($errors)):?>
+        <div class="alert alert-danger">
+            <ul>
+                <?php foreach($errors as $error):?>
+                    <li><?= $error?></li>
+                <?php endforeach;?>
+            </ul>
+        </div>
+        <?php endif; ?>
         
-         <form  method="POST">
+         <form  method="POST" enctype="multipart/form-data">
             <div class="row">
             <div class="form-group col-mid-6 mb-2">
                 <label for="name" class="form-label"> Title:</label>
@@ -60,7 +90,7 @@ if($insert)
             </div>
             <div class="form-group col-mid-6 mb-2">
                 <label for="price" class="form-label"> Price:</label>
-                <input type="text" class="form-control" id="price" name="price">
+                <input type="number" class="form-control" id="price" name="price">
             </div>
             <div class="form-group col-mid-6 mb-2">
                 <label for="category_id" class="form-label">Category:</label>
@@ -71,6 +101,10 @@ if($insert)
 
                 </select>
                 </div>
+                <div class="form-group col-12">
+                <label for="image" class="form-label">Product image</label>
+                <input type="file" class="form-control" id="image" name="image">
+            </div>
                <div class="text-center">
                 <button class="btn btn-primary" name="submit">Add Product</button>
                </div>
