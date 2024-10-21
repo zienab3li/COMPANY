@@ -9,6 +9,7 @@ $password='';
 $department_id='';
 $address='';
 $phone='';
+$errors = [];
 
 $departmentQuery="SELECT * FROM `departments`";
 $department=mysqli_query($con,$departmentQuery);
@@ -27,25 +28,60 @@ if(isset($_GET['edit']))
     $name = $row['name'];
     $email = $row['email'];
     $password=$row['password'];
-$department_id=$row['department_id'];
-$address=$row['address'];
-$phone=$row['phone'];
+    $department_id=$row['department_id'];
+    $address=$row['address'];
+    $phone=$row['phone'];
 if(isset($_POST['update']))
 {
-    $name = $_POST['name'];
-    $email = $_POST['email'];
+    $name = filterString($_POST['name']);
+    $email = filterString($_POST['email']);
     $password=$_POST['password'];
     $department_id=$_POST['department_id'];
-    $address=$_POST['address'];
-    $phone=$_POST['phone'];
-    $updateQuery = "UPDATE `employees` SET `name`='$name', `email`='$email', `password`='$password', `department_id`=$department_id, `address`='$address', `phone`='$phone' WHERE `id`=$id";
-$update = mysqli_query($con, $updateQuery);
+    $address=filterString($_POST['address']);
+    $phone=filterString($_POST['phone']);
+    // errors
+    if(stringvalidation($name, 4))
+    {
+        $errors[] = "Name must be at least 4 characters long";
+    }
+    if(stringvalidation($email, 0))
+    {
+        $errors[] = "Email must be entered!!";
+    }
+    if(stringvalidation($address, 0))
+    {
+        $errors[] = "Address must be entered!!";
+    }
+    if(stringvalidation($phone ,11))
+    {
+        $errors[] = "Phone must be more than 10!!";
+    }
+    if(empty($errors)){
+        if(!empty($_FILES['image']['name']))
+        {
+            //image uploade 
+        $realName = $_FILES['image']['name'];
+        $imgName= "company_" .rand(0,10000) ."_".time(). $realName;
+        $tmpname = $_FILES['image']['tmp_name'];
+        $oldimage = 'uploads/' . $row['image'];
+        $location = 'uploads/' . $imgName;
+        if($oldimage != 'fake.jpeg')
+        {
+            unlink($oldimage);
+        }
+        move_uploaded_file( $tmpname,$location);
+        }
+        else{
+            $imgName='fake.jpeg';
+        }
+    $updateQuery = "UPDATE `employees` SET `name`='$name', `email`='$email', `password`='$password', `department_id`=$department_id, `address`='$address', `phone`='$phone', `image`= '$imgName' WHERE `id`=$id";
+    $update = mysqli_query($con, $updateQuery);
 
     if($update){
     path('employees/list.php');
     
 }
-
+}
 }
 }
 ?>
@@ -64,8 +100,17 @@ $update = mysqli_query($con, $updateQuery);
             <p class="fs-4 mb-0"><?= $message?></p>
         </div>
         <?php endif; ?>
+        <?php if(!empty($errors)):?>
+        <div class="alert alert-danger">
+            <ul>
+                <?php foreach($errors as $error):?>
+                    <li><?= $error?></li>
+                <?php endforeach;?>
+            </ul>
+        </div>
+        <?php endif; ?>
         
-         <form  method="POST">
+         <form  method="POST" enctype="multipart/form-data">
             <div class="row">
             <div class="form-group col-mid-6 mb-2">
                 <label for="name" class="form-label"> Name:</label>
@@ -102,6 +147,11 @@ $update = mysqli_query($con, $updateQuery);
             <div class="form-group col-mid-6 mb-2">
                 <label for="phone" class="form-label">Phone:</label>
                 <input type="text" value="<?= $phone?>" class="form-control" id="phone" name="phone">
+            </div>
+            <div class="form-group col-12">
+                <label for="image" class="form-label">Employee image</label>
+                <input type="file" class="form-control" id="image" name="image">
+                <img width = "150" src="uploads/<?=$row['image']?>" alt="">
             </div>
                <div class="text-center">
                 <button class="btn btn-warning" name="update">Update</button>

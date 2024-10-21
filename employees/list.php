@@ -7,12 +7,21 @@ require_once '../shared/navbar.php';
 if(isset($_GET['delete']))
 {
     $id = $_GET['delete'];
-    $deleteQuery = "DELETE FROM `employees` WHERE id = '$id'";
+    $selectone = "SELECT `image` from `employees` WHERE id = $id ";
+    $resultone = mysqli_query($con, $selectone);
+    $image = mysqli_fetch_assoc($resultone);
+    $location = 'uploads/' . $image['image'];
+    $deleteQuery = "DELETE FROM `employees` WHERE id = $id";
     $delete = mysqli_query($con, $deleteQuery);
+    if($delete)
+    {if($image['image'] != 'fake.jpeg')
+       {unlink($location);} 
+        path("employees/list.php");
+    }
 }
 
 $selectQuery="SELECT employees.id AS emp_id,employees.name,employees.password,
-employees.address,employees.phone,employees.email,departments.id as dep_id ,departments.department
+employees.address,employees.phone,employees.email,employees.image,departments.id as dep_id ,departments.department
 FROM `employees`  JOIN `departments` ON employees.department_id = departments.id";
 $select = mysqli_query($con, $selectQuery);
 // $x=mysqli_fetch_array($select);
